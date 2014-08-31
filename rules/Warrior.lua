@@ -32,5 +32,20 @@ local addonName, addon = ...
 
 AdiButtonAuras:RegisterRules(function(addon)
 	addon.Debug('Rules', 'Adding warrior rules')
-	return ImportPlayerSpells { "WARRIOR" }
+	return {
+		ImportPlayerSpells { "WARRIOR" },
+		
+		Configure {
+			"Shield Barrier",
+			addon.L["Show hint when rage above 60."],
+			112048, -- Shield Barrier
+			"player",
+			{ "UNIT_POWER" },
+			function(_, model)
+				if UnitPower("player") >= 60 then
+					model.hint = true
+				end
+			end,
+		},
+	}
 end)
