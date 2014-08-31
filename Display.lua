@@ -38,7 +38,7 @@ local unpack = _G.unpack
 
 local AceTimer = addon.GetLib('AceTimer-3.0')
 
-local fontFile, fontSize, fontFlag = [[Fonts\ARIALN.TTF]], 13, "OUTLINE"
+local fontFile, fontSize, fontFlag = [[Fonts\FRIZQT__.TTF]], 12, "OUTLINE"
 
 local overlayPrototype = addon.overlayPrototype
 local ColorGradient = addon.ColorGradient
