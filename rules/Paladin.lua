@@ -1,6 +1,6 @@
 --[[
 AdiButtonAuras - Display auras on action buttons.
-Copyright 2013 Adirelle (adirelle@gmail.com)
+Copyright 2013-2014 Adirelle (adirelle@gmail.com)
 All rights reserved.
 
 This file is part of AdiButtonAuras.
@@ -19,19 +19,12 @@ You should have received a copy of the GNU General Public License
 along with AdiButtonAuras.  If not, see <http://www.gnu.org/licenses/>.
 --]]
 
-if select(2, UnitClass("player")) ~= "PALADIN" then return end
+local _, addon = ...
 
-local addonName, addon = ...
+if not addon.isClass("PALADIN") then return end
 
--- Globals: AddRuleFor Configure SimpleAuras UnitBuffs
--- Globals: PassiveModifier SimpleDebuffs SharedSimpleDebuffs SimpleBuffs
--- Globals: LongestDebuffOf SelfBuffs PetBuffs BuffAliases DebuffAliases
--- Globals: SelfBuffAliases SharedBuffs ShowPower SharedSimpleBuffs
--- Globals: BuildAuraHandler_Longest ImportPlayerSpells bit BuildAuraHandler_Single
--- Globals: math
-
-AdiButtonAuras:RegisterRules(function(addon)
-	addon.Debug('Rules', 'Adding paladin rules')
+AdiButtonAuras:RegisterRules(function()
+	Debug('Adding paladin rules')
 	return {
 		ImportPlayerSpells { "PALADIN" },
 		-- display current holy power on spenders and flash it maximum reached

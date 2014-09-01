@@ -1,6 +1,6 @@
 --[[
 AdiButtonAuras - Display auras on action buttons.
-Copyright 2013 Adirelle (adirelle@gmail.com)
+Copyright 2013-2014 Adirelle (adirelle@gmail.com)
 All rights reserved.
 
 This file is part of AdiButtonAuras.
@@ -19,19 +19,12 @@ You should have received a copy of the GNU General Public License
 along with AdiButtonAuras.  If not, see <http://www.gnu.org/licenses/>.
 --]]
 
-if select(2, UnitClass("player")) ~= "DRUID" then return end
+local _, addon = ...
 
--- Globals: AddRuleFor Configure SimpleAuras UnitBuffs
--- Globals: PassiveModifier SimpleDebuffs SharedSimpleDebuffs SimpleBuffs
--- Globals: LongestDebuffOf SelfBuffs PetBuffs BuffAliases DebuffAliases
--- Globals: SelfBuffAliases SharedBuffs ShowPower SharedSimpleBuffs
--- Globals: BuildAuraHandler_Longest ImportPlayerSpells bit BuildAuraHandler_Single
--- Globals: math
+if not addon.isClass("DRUID") then return end
 
-AdiButtonAuras:RegisterRules(function(addon)
-	addon.Debug('Rules', 'Adding druid rules')
-	
-	local L = addon.L
+AdiButtonAuras:RegisterRules(function()
+	Debug('Rules', 'Adding druid rules')
 
 	return {
 		ImportPlayerSpells {
@@ -69,9 +62,9 @@ AdiButtonAuras:RegisterRules(function(addon)
 		Configure {
 			"ComboPoints",
 			format(
-				addon.L["Show %s and %s when it reaches its maximum."],
-				addon.L["combo points"],
-				addon.DescribeHighlight("flash")
+				L["Show %s and %s when it reaches its maximum."],
+				L["combo points"],
+				DescribeHighlight("flash")
 			),
 			{
 				  1079, -- Rip
@@ -147,8 +140,9 @@ AdiButtonAuras:RegisterRules(function(addon)
 			16864, -- Omen of Clarity
 			{
 				5221, -- Shred
+				5185, -- Healing Touch
 			},
-			16870, -- Clearcasting
+			135700, -- Clearcasting
 			"player",
 			"flash"
 		},
@@ -171,7 +165,7 @@ AdiButtonAuras:RegisterRules(function(addon)
 		},
 		Configure {
 			"GlyphOfRejuvenation",
-			addon.L["Suggests to cast Rejuvenation to enable Glyph of Rejuvenation effect."],
+			L["Suggests to cast Rejuvenation to enable Glyph of Rejuvenation effect."],
 			  774, -- Rejuvenation
 			"player",
 			"UNIT_AURA",

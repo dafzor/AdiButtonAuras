@@ -1,6 +1,6 @@
 --[[
 AdiButtonAuras - Display auras on action buttons.
-Copyright 2013 Adirelle (adirelle@gmail.com)
+Copyright 2013-2014 Adirelle (adirelle@gmail.com)
 All rights reserved.
 
 This file is part of AdiButtonAuras.
@@ -19,29 +19,21 @@ You should have received a copy of the GNU General Public License
 along with AdiButtonAuras.  If not, see <http://www.gnu.org/licenses/>.
 --]]
 
-if select(2, UnitClass("player")) ~= "ROGUE" then return end
+local _, addon = ...
 
-local addonName, addon = ...
+if not addon.isClass("ROGUE") then return end
 
--- Globals: AddRuleFor Configure SimpleAuras UnitBuffs
--- Globals: PassiveModifier SimpleDebuffs SharedSimpleDebuffs SimpleBuffs
--- Globals: LongestDebuffOf SelfBuffs PetBuffs BuffAliases DebuffAliases
--- Globals: SelfBuffAliases SharedBuffs ShowPower SharedSimpleBuffs
--- Globals: BuildAuraHandler_Longest ImportPlayerSpells bit BuildAuraHandler_Single
--- Globals: math
-
-AdiButtonAuras:RegisterRules(function(addon)
-	addon.Debug('Rules', 'Adding rogue rules')
-		local L = addon.L
+AdiButtonAuras:RegisterRules(function()
+	Debug('Adding rogue rules')
 
 	return {
 		ImportPlayerSpells { "ROGUE" },
 		Configure {
 			"ComboPoints",
 			format(
-				addon.L["Show %s and %s when it reaches its maximum."],
-				addon.L["combo points"],
-				addon.DescribeHighlight("flash")
+				L["Show %s and %s when it reaches its maximum."],
+				L["combo points"],
+				DescribeHighlight("flash")
 			),
 			{
 				 32645, -- Envenom
