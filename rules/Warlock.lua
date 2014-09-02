@@ -87,7 +87,7 @@ AdiButtonAuras:RegisterRules(function()
 		},
 		Configure {
 			"Havoc_hint",
-			L["Show hint on Havoc when is available."],
+			L["Show hint when Havoc is available."],
 			80240,
 			"player",
 			"UNIT_AURA",
