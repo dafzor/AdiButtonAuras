@@ -81,12 +81,11 @@ AdiButtonAuras:RegisterRules(function()
 					if selfHavoc(units, model) then
 						enemyHavoc(units, model)
 						return true
-					else
-						model.hint = true
 					end
 				end
 			end)()
 		},
+		
 	}
 
 end)
