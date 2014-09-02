@@ -25,5 +25,14 @@ if not addon.isClass("WARRIOR") then return end
 
 AdiButtonAuras:RegisterRules(function()
 	Debug('Adding warrior rules')
-	return ImportPlayerSpells { "WARRIOR" }
+	return {
+		ImportPlayerSpells { "WARRIOR" },
+		ShowPower {
+			112048, -- Shield Barrier
+			"RAGE",
+			60,
+			"flash",
+			addon.L["Show hint when there's enough rage for a full strength Shield Barrier."]
+		},
+	}
 end)
