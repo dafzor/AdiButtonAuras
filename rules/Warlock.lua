@@ -85,7 +85,21 @@ AdiButtonAuras:RegisterRules(function()
 				end
 			end)()
 		},
-		
+		Configure {
+			"Havoc_hint",
+			L["Show hint on Havoc when is available."],
+			80240,
+			"player",
+			"UNIT_AURA",
+			(function()
+				local havocBuff = GetSpellInfo(80240) -- Havoc
+				return function(_, model)
+					if not UnitAura("player", havocBuff, nil, "HELPFUL PLAYER") then
+						model.hint = true
+					end
+				end
+			end)(),
+		},
 	}
 
 end)
