@@ -76,6 +76,8 @@ addon.DEFAULT_SETTINGS = {
 		noFlashOnCooldown = false,
 		noFlashOutOfCombat = false,
 		hints = "show",
+		fontSize = 13,
+		highlightTexture = "default",
 	}
 }
 
@@ -140,6 +142,44 @@ for name, func in pairs(mixins) do
 end
 
 ------------------------------------------------------------------------------
+-- LibSharedMedia-3.0 stuff
+------------------------------------------------------------------------------
+
+do
+	local LSM = GetLib('LibSharedMedia-3.0')
+
+	-- Initialize the default font
+	addon.DEFAULT_SETTINGS.profile.fontName = LSM:GetDefault(LSM.MediaType.FONT)
+	local wantedFile = _G.NumberFontNormalSmall:GetFont()
+	for name, file in pairs(LSM:HashTable(LSM.MediaType.FONT)) do
+		if file == wantedFile then
+			addon.DEFAULT_SETTINGS.profile.fontName = name
+			break
+		end
+	end
+
+	-- Register alternative highlights
+	local HIGHLIGHT_MEDIATYPE = addonName:lower().."_border"
+	local texturePath = [[Interface\AddOns\]]..addonName..[[\media\highlight\]]
+	for file, label in pairs {
+		["bottom-top-gradient"]      = L["Bottom to top gradient"],
+		["corners"]                  = L["Square corners"],
+		["default-border"]           = L["Default border"],
+		["left-right-gradient"]      = L["Left to right gradient"],
+		["right-left-gradient"]      = L["Right to left gradient"],
+		["top-bottom-gradient"]      = L["Top to bottom gradient"],
+		["top-left-gradient"]        = L["Top left corner gradient"],
+		["top-left-half-gradient"]   = L["Top left half gradient"],
+		["x"]                        = L["X-shaped border"],
+		["y"]                        = L["Y-shaped border"],
+	} do
+		LSM:Register(HIGHLIGHT_MEDIATYPE, label, texturePath..file)
+	end
+	LSM:SetDefault(HIGHLIGHT_MEDIATYPE, L["Default border"])
+	addon.HIGHLIGHT_MEDIATYPE = HIGHLIGHT_MEDIATYPE
+end
+
+------------------------------------------------------------------------------
 -- Initialization
 ------------------------------------------------------------------------------
 
@@ -163,7 +203,9 @@ local function UpdateHandler(event, button)
 
 end
 local CONFIG_CHANGED = addonName..'_Config_Changed'
+local THEME_CHANGED = addonName..'_Theme_Changed'
 addon.CONFIG_CHANGED = CONFIG_CHANGED
+addon.THEME_CHANGED = THEME_CHANGED
 
 function addon:ADDON_LOADED(event, name)
 	-- Initialization

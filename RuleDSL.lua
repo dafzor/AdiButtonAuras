@@ -22,132 +22,48 @@ along with AdiButtonAuras.  If not, see <http://www.gnu.org/licenses/>.
 local addonName, addon = ...
 
 local _G = _G
+local bit = _G.bit
+local error = _G.error
+local floor = _G.floor
+local format = _G.format
 local GetItemInfo = _G.GetItemInfo
 local GetSpellInfo = _G.GetSpellInfo
 local GetSpellLink = _G.GetSpellLink
-local UnitAura = _G.UnitAura
-local UnitClass = _G.UnitClass
-local UnitPower = _G.UnitPower
-local UnitPowerMax = _G.UnitPowerMax
-local assert = _G.assert
-local error = _G.error
-local format = _G.format
-local geterrorhandler = _G.geterrorhandler
+local gsub = _G.gsub
 local ipairs = _G.ipairs
+local math = _G.math
 local next = _G.next
-local pairs = _G.pairs
 local select = _G.select
 local setfenv = _G.setfenv
-local setmetatable = _G.setmetatable
 local strjoin = _G.strjoin
 local strmatch = _G.strmatch
 local tinsert = _G.tinsert
 local tonumber = _G.tonumber
 local tostring = _G.tostring
 local type = _G.type
+local UnitAura = _G.UnitAura
+local UnitClass = _G.UnitClass
+local UnitPower = _G.UnitPower
+local UnitPowerMax = _G.UnitPowerMax
 local unpack = _G.unpack
 local wipe = _G.wipe
 local xpcall = _G.xpcall
 
-local getkeys = addon.getkeys
-local ucfirst = addon.ucfirst
+local getkeys      = addon.getkeys
+local ucfirst      = addon.ucfirst
+local errorhandler = addon.errorhandler
+local Do           = addon.Do
+local ConcatLists  = addon.ConcatLists
+local FlattenList  = addon.FlattenList
+local AsList       = addon.AsList
+local AsSet        = addon.AsSet
+local MergeSets    = addon.MergeSets
+local BuildKey     = addon.BuildKey
 
 local LibPlayerSpells = addon.GetLib('LibPlayerSpells-1.0')
 
 -- Local debug with dedicated prefix
 local function Debug(...) return addon.Debug('|cffffff00Rules:|r', ...) end
-
-------------------------------------------------------------------------------
--- Generic list and set tools
-------------------------------------------------------------------------------
-
-local function errorhandler(msg)
-	Debug('|cffff0000'..tostring(msg)..'|r')
-	return geterrorhandler()(msg)
-end
-
-
-local function Do(funcs)
-	for j, func in ipairs(funcs) do
-		xpcall(func, errorhandler)
-	end
-end
-
-local function ConcatLists(a, b)
-	for i, v in ipairs(b) do
-		tinsert(a, v)
-	end
-	return a
-end
-
-local FlattenList
-do
-	local function Flatten0(a, b)
-		for i, v in ipairs(b) do
-			if type(v) == "table" then
-				Flatten0(a, v)
-			else
-				tinsert(a, v)
-			end
-		end
-		return a
-	end
-
-	function FlattenList(l) return Flatten0({}, l) end
-end
-
-local function AsList(value, checkType, callLevel)
-	if type(value) == "table" then
-		value = FlattenList(value)
-		if checkType then
-			for i, v in ipairs(value) do
-				if type(v) ~= checkType then
-					error(format("Invalid value type, expected %s, got %s", checkType, type(v)), callLevel+1)
-				end
-			end
-		end
-		return value
-	elseif checkType == nil or type(value) == checkType then
-		return { value }
-	else
-		error(format("Invalid value type, expected %s, got %s", checkType, type(value)), callLevel+1)
-	end
-end
-
-local function AsSet(value, checkType, callLevel)
-	local set = {}
-	local size = 0
-	for i, value in ipairs(AsList(value, checkType, callLevel+1)) do
-		if not set[value] then
-			set[value] = true
-			size = size + 1
-		end
-	end
-	return set, size
-end
-
-local function MergeSets(a, b)
-	for k in pairs(b) do
-		a[k] = true
-	end
-	return a
-end
-
-local BuildKey
-do
-	local function BuildKey0(value, ...)
-		if type(value) == "table" then
-			return BuildKey(unpack(value)), BuildKey0(...)
-		elseif value then
-			return tostring(value), BuildKey0(...)
-		end
-	end
-
-	function BuildKey(...)
-		return strjoin(':', BuildKey0(...))
-	end
-end
-addon.BuildKey = BuildKey
 
 ------------------------------------------------------------------------------
 -- Rule creation
@@ -430,7 +346,7 @@ end
 local function Auras(filter, highlight, unit, spells)
 	local funcs = {}
 	local key = BuildKey('Auras', filter, highlight, unit)
-	local desc = BuildDesc(filter, highlight, token, '@NAME')
+	local desc = BuildDesc(filter, highlight, unit, '@NAME')
 	for i, spell in ipairs(AsList(spells, "number", 2)) do
 		tinsert(funcs, Configure(key, desc, spell, unit,  "UNIT_AURA",  BuildAuraHandler_Single(filter, highlight, unit, spell, 2), 2))
 	end
@@ -604,119 +520,91 @@ local function WrapTableArgFunc(func)
 	end
 end
 
-local allowedLibraries = {
-	["LibDispellable-1.0"] = true,
-	["LibPlayerSpells-1.0"] = true,
-	["DRData-1.0"] = true,
-	["LibSpellbook-1.0"] = true,
-}
+local RULES_ENV = addon.BuildSafeEnv(
+	-- Base "globals"
+	{
+		-- Common functions and constatns
+		L            = L,
+		Debug        = Debug,
+		PLAYER_CLASS = select(2, UnitClass("player")),
 
-local rules_G = {
-	-- Common functions
-	L      = L,
-	Debug  = Debug,
-	GetLib = function(major)
-		if not allowedLibraries[major] then
-			error(format("Library '%s' is not allowed", major), 2)
-		end
-		return addon.GetLib(major)
-	end,
+		-- Intended to be used un Lua
+		AddRuleFor               = AddRuleFor,
+		BuildAuraHandler_Single  = BuildAuraHandler_Single,
+		BuildAuraHandler_Longest = BuildAuraHandler_Longest,
+		BuildAuraHandler_FirstOf = BuildAuraHandler_FirstOf,
 
-	-- Constants
-	PLAYER_CLASS = select(2, UnitClass("player")),
+		-- Description helpers
+		BuildDesc         = BuildDesc,
+		BuildKey          = BuildKey,
+		DescribeHighlight = DescribeHighlight,
+		DescribeFilter    = DescribeFilter,
+		DescribeAllTokens = DescribeAllTokens,
+		DescribeAllSpells = DescribeAllSpells,
+		DescribeLPSSource = DescribeLPSSource,
 
-	-- Intended to be used un Lua
-	AddRuleFor               = AddRuleFor,
-	BuildAuraHandler_Single  = BuildAuraHandler_Single,
-	BuildAuraHandler_Longest = BuildAuraHandler_Longest,
-	BuildAuraHandler_FirstOf = BuildAuraHandler_FirstOf,
+		-- Basic functions
+		Configure = WrapTableArgFunc(Configure),
+		ShowPower = WrapTableArgFunc(ShowPower),
+		PassiveModifier = WrapTableArgFunc(PassiveModifier),
+		ImportPlayerSpells = WrapTableArgFunc(ImportPlayerSpells),
 
-	-- Description helpers
-	BuildDesc         = BuildDesc,
-	BuildKey          = BuildKey,
-	DescribeHighlight = DescribeHighlight,
-	DescribeFilter    = DescribeFilter,
-	DescribeAllTokens = DescribeAllTokens,
-	DescribeAllSpells = DescribeAllSpells,
-	DescribeLPSSource = DescribeLPSSource,
+		-- High-level functions
+		SimpleDebuffs = function(spells)
+			return Auras("HARMFUL PLAYER", "bad", "enemy", spells)
+		end,
 
-	-- Basic functions
-	Configure = WrapTableArgFunc(Configure),
-	ShowPower = WrapTableArgFunc(ShowPower),
-	PassiveModifier = WrapTableArgFunc(PassiveModifier),
-	ImportPlayerSpells = WrapTableArgFunc(ImportPlayerSpells),
+		SharedSimpleDebuffs = function(spells)
+			return Auras("HARMFUL", "bad", "enemy", spells)
+		end,
 
-	-- High-level functions
-	SimpleDebuffs = function(spells)
-		return Auras("HARMFUL PLAYER", "bad", "enemy", spells)
-	end,
+		SimpleBuffs = function(spells)
+			return Auras("HELPFUL PLAYER", "good", "ally", spells)
+		end,
 
-	SharedSimpleDebuffs = function(spells)
-		return Auras("HARMFUL", "bad", "enemy", spells)
-	end,
+		SharedSimpleBuffs = function(spells)
+			return Auras("HELPFUL", "good", "ally", spells)
+		end,
 
-	SimpleBuffs = function(spells)
-		return Auras("HELPFUL PLAYER", "good", "ally", spells)
-	end,
+		LongestDebuffOf = function(spells, buffs)
+			local key = BuildKey('LongestDebuffOf', spells, buffs)
+			local desc =  BuildDesc("HARMFUL", "bad", "enemy", buffs)
+			return Configure(key, desc, spells, "enemy", "UNIT_AURA", BuildAuraHandler_Longest("HARMFUL", "bad", "enemy", buffs or spells, 2), nil, 2)
+		end,
 
-	SharedSimpleBuffs = function(spells)
-		return Auras("HELPFUL", "good", "ally", spells)
-	end,
+		SelfBuffs = function(spells)
+			return Auras("HELPFUL PLAYER", "good", "player", spells)
+		end,
 
-	LongestDebuffOf = function(spells, buffs)
-		local key = BuildKey('LongestDebuffOf', spells, buffs)
-		local desc =  BuildDesc("HARMFUL", "bad", "enemy", buffs)
-		return Configure(key, desc, spells, "enemy", "UNIT_AURA", BuildAuraHandler_Longest("HARMFUL", "bad", "enemy", buffs or spells, 2), nil, 2)
-	end,
+		PetBuffs = function(spells)
+			return Auras("HELPFUL PLAYER", "good", "pet", spells)
+		end,
 
-	SelfBuffs = function(spells)
-		return Auras("HELPFUL PLAYER", "good", "player", spells)
-	end,
+		BuffAliases = function(args)
+			return AuraAliases("HELPFUL PLAYER", "good", "ally", unpack(args))
+		end,
 
-	PetBuffs = function(spells)
-		return Auras("HELPFUL PLAYER", "good", "pet", spells)
-	end,
+		DebuffAliases = function(args)
+			return AuraAliases("HARMFUL PLAYER", "bad", "enemy", unpack(args))
+		end,
 
-	BuffAliases = function(args)
-		return AuraAliases("HELPFUL PLAYER", "good", "ally", unpack(args))
-	end,
-
-	DebuffAliases = function(args)
-		return AuraAliases("HARMFUL PLAYER", "bad", "enemy", unpack(args))
-	end,
-
-	SelfBuffAliases = function(args)
-		return AuraAliases("HELPFUL PLAYER", "good", "player", unpack(args))
-	end,
-}
-
-for i, name in pairs{
-	"bit", "ceil", "floor", "format", "GetComboPoints", "GetEclipseDirection", "GetNumGroupMembers",
-	"GetShapeshiftFormID", "GetSpellBonusHealing", "GetSpellInfo", "GetTime", "GetTotemInfo", "ipairs",
-	"math", "min", "pairs", "pairs", "select", "SPELL_POWER_MANA", "string", "table", "tinsert",
-	"UnitAura", "UnitAura", "UnitBuff", "UnitBuff", "UnitCanAttack", "UnitCastingInfo",
-	"UnitChannelInfo", "UnitClass", "UnitDebuff", "UnitDebuff", "UnitHealth", "UnitHealth",
-	"UnitHealthMax", "UnitPower", "UnitPower", "UnitPowerMax", "UnitPowerMax", "UnitStagger",
-	"STAGGER_YELLOW_TRANSITION", "UnitIsDeadOrGhost", "UnitIsPlayer", "FIRE_TOTEM_SLOT",
-	"EARTH_TOTEM_SLOT", "WATER_TOTEM_SLOT", "AIR_TOTEM_SLOT"
-} do
-	rules_G[name] = _G[name]
-end
-
--- Custom error message
-setmetatable(rules_G, {
-	__index = function(_, name)
-		error(format("'%s' is forbidden in rule snippets.", name), 2)
-	end
-})
-
-local RULES_ENV = setmetatable({}, {
-	__metatable = false,
-	__index = rules_G,
-	__newindex = function(_, name)
-		error(format("Changing global '%s' of role snipped is forbidden.", name), 2)
-	end,
-})
+		SelfBuffAliases = function(args)
+			return AuraAliases("HELPFUL PLAYER", "good", "player", unpack(args))
+		end,
+	},
+	-- Allowed Libraries
+	{
+		"LibDispellable-1.0", "LibPlayerSpells-1.0", "DRData-1.0", "LibSpellbook-1.0", "LibItemBuffs-1.0"
+	},
+	-- Allowed globals
+	{
+		"bit", "ceil", "floor", "format", "GetComboPoints", "GetEclipseDirection", "GetNumGroupMembers",
+		"GetShapeshiftFormID", "GetSpellBonusHealing", "GetSpellInfo", "GetTime", "GetTotemInfo",
+		"ipairs", "math", "min", "pairs", "select", "string", "table", "tinsert", "UnitIsPlayer",
+		"UnitCanAttack", "UnitCastingInfo", "UnitChannelInfo", "UnitClass","UnitHealth", "UnitAura",
+		"UnitHealthMax", "UnitPower",  "UnitPowerMax",  "UnitStagger", "UnitIsDeadOrGhost",
+	}
+)
 
 ------------------------------------------------------------------------------
 -- Rule loading and updating
