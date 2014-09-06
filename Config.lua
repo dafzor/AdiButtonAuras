@@ -49,6 +49,7 @@ AdiButtonAuras:CreateConfig(function(addonName, addon)
 	local wipe = _G.wipe
 
 	local L = addon.L
+	local ucfirst = addon.ucfirst
 
 	local AceConfig = addon.GetLib('AceConfig-3.0')
 	local AceConfigDialog = addon.GetLib('AceConfigDialog-3.0')
@@ -175,7 +176,8 @@ AdiButtonAuras:CreateConfig(function(addonName, addon)
 					GameTooltip:AddLine(L['Rules:'])
 					for i, ruleKey in ipairs(self.conf.keys) do
 						local enabled = addon.db.profile.rules[ruleKey]
-						GameTooltip:AddLine(wrap("- "..addon.ruleDescs[ruleKey], 30), enabled and 0 or 1, enabled and 1 or 0, 0)
+						local desc = ucfirst(addon.ruleDescs[ruleKey] or addon.itemDescs[ruleKey])
+						GameTooltip:AddLine(wrap("- "..desc, 30), enabled and 0 or 1, enabled and 1 or 0, 0)
 					end
 				end
 				GameTooltip:AddLine(L['Shift+click to toggle.'])
@@ -197,7 +199,8 @@ AdiButtonAuras:CreateConfig(function(addonName, addon)
 				--@end-debug@
 			else
 				GameTooltip:AddDoubleLine(L['Status'], UNKNOWN, nil, nil, nil, 0.5, 0.5, 0.5)
-				GameTooltip:AddLine(L['AdiButtonAuras has no rule for this spell/item.'])
+				GameTooltip:AddLine(format(L['AdiButtonAuras has no rules for this %s.'], L[self.type]), 0.5, 0.5, 0.5)
+				GameTooltip:AddDoubleLine(L["Action 'key' for reference"], self.key, nil, nil, nil, 1, 1, 1)
 			end
 			GameTooltip:Show()
 		end
@@ -523,7 +526,7 @@ AdiButtonAuras:CreateConfig(function(addonName, addon)
 							values = function()
 								wipe(tmpRuleList)
 								for i, key in ipairs(selectedConf.keys) do
-									tmpRuleList[i] = addon.ruleDescs[key]
+									tmpRuleList[i] = ucfirst(addon.ruleDescs[key] or addon.itemDescs[key])
 								end
 								return tmpRuleList
 							end,
