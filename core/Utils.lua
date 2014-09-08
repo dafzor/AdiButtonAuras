@@ -22,11 +22,20 @@ along with AdiButtonAuras.  If not, see <http://www.gnu.org/licenses/>.
 local addonName, addon = ...
 
 local _G = _G
-local next = _G.next
-local setmetatable = _G.setmetatable
-local tostring = _G.tostring
+local error = _G.error
+local format = _G.format
+local ipairs = _G.ipairs
 local max = _G.max
 local min = _G.min
+local next = _G.next
+local pairs = _G.pairs
+local select = _G.select
+local setmetatable = _G.setmetatable
+local strjoin = _G.strjoin
+local tinsert = _G.tinsert
+local tostring = _G.tostring
+local type = _G.type
+local unpack = _G.unpack
 
 ------------------------------------------------------------------------------
 -- Create a memoization table
@@ -161,22 +170,9 @@ function addon.ColorGradient(...)
 	end
 end
 
-local function errorhandler(msg)
-	Debug('|cffff0000'..tostring(msg)..'|r')
-	return geterrorhandler()(msg)
-end
-addon.errorhandler = errorhandler
-
 ------------------------------------------------------------------------------
 -- List & set helpers
 ------------------------------------------------------------------------------
-
-local function Do(funcs)
-	for j, func in ipairs(funcs) do
-		xpcall(func, errorhandler)
-	end
-end
-addon.Do = Do
 
 local function ConcatLists(a, b)
 	for i, v in ipairs(b) do

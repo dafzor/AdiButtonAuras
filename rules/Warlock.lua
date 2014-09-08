@@ -55,7 +55,7 @@ AdiButtonAuras:RegisterRules(function()
 			"UNIT_AURA",
 			function(_, model)
 				local found, count = GetPlayerBuff("player", 117828)
-				if name and count >= 3 then
+				if found and count >= 3 then
 					model.highlight = "good"
 				end
 			end,
@@ -75,27 +75,21 @@ AdiButtonAuras:RegisterRules(function()
 				local selfHavoc = BuildAuraHandler_Single("HELPFUL PLAYER", "good", "player", 80240)
 				local enemyHavoc = BuildAuraHandler_Single("HARMFUL PLAYER", "bad", "enemy", 80240)
 				return function(units, model)
-					if selfHavoc(units, model) then
-						enemyHavoc(units, model)
-						return true
-					end
+					return selfHavoc(units, model) and enemyHavoc(units, model)
 				end
 			end)()
 		},
 		Configure {
-			"Havoc_hint",
-			L["Show hint when Havoc is available."],
+			"HavocHint",
+			L["Suggest using Havoc when it is available."],
 			80240,
 			"player",
 			"UNIT_AURA",
-			(function()
-				local havocBuff = GetSpellInfo(80240) -- Havoc
-				return function(_, model)
-					if not UnitAura("player", havocBuff, nil, "HELPFUL PLAYER") then
-						model.hint = true
-					end
+			function(_, model)
+				if not GetPlayerAura("player", 80240) then
+					model.hint = true
 				end
-			end)(),
+			end
 		},
 	}
 
